@@ -2,10 +2,9 @@ import React from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
-import { stripePK } from '../../constants';
 import Checkout from './checkout';
 
-const stripePromise = loadStripe(stripePK);
+const stripePromise = loadStripe(process.env.REACT_APP_PAYPAL_STRIPE_PUB_KEY);
 
 const StripeComponent = () => {
   return (
