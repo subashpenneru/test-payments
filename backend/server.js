@@ -2,11 +2,17 @@ import path from 'path';
 import fetch from 'node-fetch';
 import express from 'express';
 import dotenv from 'dotenv';
+import Stripe from 'stripe';
 
 dotenv.config();
 
-const { PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_MERCHANT_ID, PORT } =
-  process.env;
+const {
+  PAYPAL_CLIENT_ID,
+  PAYPAL_CLIENT_SECRET,
+  PAYPAL_MERCHANT_ID,
+  STRIPE_SECRET_KEY,
+  PORT,
+} = process.env;
 const base = 'https://api-m.sandbox.paypal.com';
 const app = express();
 
@@ -130,6 +136,34 @@ app.get('/api/config/paypal', (req, res, next) =>
     clientSecret: PAYPAL_CLIENT_SECRET,
   })
 );
+
+const stripe = new Stripe(STRIPE_SECRET_KEY);
+
+app.post('/api/create-payment-intent', async (req, res) => {
+  const { amount, currency = 'usd' } = req.body;
+
+  try {
+    const payload = {
+      amount: amount,
+      currency: currency,
+      capture_method: 'automatic',
+      customer: 'subash5595',
+    };
+    if (currency === 'usd') {
+      payload.payment_method_types = ['card', 'afterpay_clearpay'];
+    }
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount,
+      currency: 'usd',
+    });
+
+    res.status(200).json({
+      clientSecret: paymentIntent.client_secret,
+    });
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
 
 app.listen(
   PORT,
