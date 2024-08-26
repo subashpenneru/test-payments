@@ -4,7 +4,7 @@ import { loadStripe } from '@stripe/stripe-js';
 
 import Checkout from './checkout';
 
-const stripePromise = loadStripe(process.env.REACT_APP_PAYPAL_STRIPE_PUB_KEY);
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUB_KEY);
 
 const StripeComponent = () => {
   return (
