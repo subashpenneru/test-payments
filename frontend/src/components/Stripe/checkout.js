@@ -1,47 +1,16 @@
-import { useStripe } from '@stripe/react-stripe-js';
-import React, { useEffect, useState } from 'react';
-
-import { appearance } from './utils';
+import {
+  AddressElement,
+  LinkAuthenticationElement,
+  PaymentElement,
+  useElements,
+  useStripe,
+} from '@stripe/react-stripe-js';
+import React, { useState } from 'react';
 
 const Checkout = () => {
   const stripe = useStripe();
-  const [elements, setElements] = useState();
+  const elements = useElements();
   const [error, setError] = useState(null);
-  const [clientSecret, setClientSecret] = useState('');
-
-  useEffect(() => {
-    fetch('/api/create-payment-intent', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        amount: 10000,
-        currency: 'usd',
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log(data);
-        setClientSecret(data.clientSecret);
-      });
-  }, []);
-
-  useEffect(() => {
-    if (clientSecret !== '') {
-      console.log('useffect', stripe, clientSecret);
-      const elements = stripe.elements({
-        clientSecret: clientSecret,
-        appearance: appearance,
-        fonts: [{ cssSrc: 'https://fonts.googleapis.com/css?family=Roboto' }],
-      });
-
-      const paymentElement = elements.create('payment');
-      paymentElement.mount('#payment-element');
-      setElements(elements);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientSecret]);
 
   const submitPayment = async (e) => {
     e.preventDefault();
@@ -50,6 +19,7 @@ const Checkout = () => {
     const { error, ...rest } = await stripe.confirmPayment({
       elements,
       confirmParams: {
+        return_url: 'http://localhost:3000/',
         payment_method_data: {
           billing_details: {
             name: 'Test',
@@ -92,6 +62,18 @@ const Checkout = () => {
     <form id='payment-form'>
       <div id='payment-element'></div>
       <div>{error}</div>
+      <LinkAuthenticationElement id='authentication-element' />
+      <AddressElement options={{ mode: 'shipping' }} />
+      <PaymentElement
+        options={{
+          layout: {
+            type: 'accordion',
+            defaultCollapsed: false,
+            radios: true,
+            spacedAccordionItems: false,
+          },
+        }}
+      />
       <button className='form-control btn btn-primary' onClick={submitPayment}>
         Pay 100 now
       </button>
