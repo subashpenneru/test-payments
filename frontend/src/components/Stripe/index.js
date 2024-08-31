@@ -4,11 +4,13 @@ import { loadStripe } from '@stripe/stripe-js';
 
 import Checkout from './checkout';
 import { appearance } from './utils';
+import CheckoutHosted from './checkout-hosted';
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUB_KEY);
 
 const StripeComponent = () => {
   const [clientSecret, setClientSecret] = useState('');
+  const [showHosted, setShowHosted] = useState(false);
 
   useEffect(() => {
     fetch('/api/create-payment-intent', {
@@ -32,13 +34,19 @@ const StripeComponent = () => {
     <div
       className='stripe-component'
       style={{ maxWidth: '476px', marginLeft: '20px', marginTop: '20px' }}>
-      {clientSecret && (
+      <button
+        onClick={() => setShowHosted((prev) => !prev)}
+        style={{ marginBottom: '2rem' }}>
+        Toggle Checkout Component
+      </button>
+      {!showHosted && clientSecret && (
         <Elements
           stripe={stripePromise}
           options={{ appearance: appearance, clientSecret: clientSecret }}>
           <Checkout />
         </Elements>
       )}
+      {showHosted && <CheckoutHosted />}
     </div>
   );
 };

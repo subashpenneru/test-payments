@@ -12,6 +12,7 @@ const {
   PAYPAL_MERCHANT_ID,
   STRIPE_SECRET_KEY,
   PORT,
+  STRIPE_ENDPOINT_SECRET,
 } = process.env;
 const base = 'https://api-m.sandbox.paypal.com';
 const app = express();
@@ -164,6 +165,62 @@ app.post('/api/create-payment-intent', async (req, res) => {
     res.status(500).send({ error: error.message });
   }
 });
+
+app.post('/api/create-checkout-session', async (req, res) => {
+  const session = await stripe.checkout.sessions.create(req.body);
+  res.status(200).json({ data: session });
+});
+
+app.post(
+  '/webhook',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    console.log(sig);
+    console.log(req.body);
+
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        STRIPE_ENDPOINT_SECRET
+      );
+    } catch (err) {
+      res.status(400).send(`Webhook Error: ${err.message}`);
+      return;
+    }
+
+    switch (event.type) {
+      case 'checkout.session.async_payment_failed':
+        const checkoutSessionAsyncPaymentFailed = event.data.object;
+        // Then define and call a function to handle the event checkout.session.async_payment_failed
+        console.log(checkoutSessionAsyncPaymentFailed);
+        break;
+      case 'checkout.session.async_payment_succeeded':
+        const checkoutSessionAsyncPaymentSucceeded = event.data.object;
+        console.log(checkoutSessionAsyncPaymentSucceeded);
+        // Then define and call a function to handle the event checkout.session.async_payment_succeeded
+        break;
+      case 'checkout.session.completed':
+        const checkoutSessionCompleted = event.data.object;
+        console.log(checkoutSessionCompleted);
+        // Then define and call a function to handle the event checkout.session.completed
+        break;
+      case 'checkout.session.expired':
+        const checkoutSessionExpired = event.data.object;
+        // Then define and call a function to handle the event checkout.session.expired
+        console.log(checkoutSessionExpired);
+        break;
+      // ... handle other event types
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    res.status(200).send();
+  }
+);
 
 app.listen(
   PORT,
